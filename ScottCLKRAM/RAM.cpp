@@ -1,42 +1,43 @@
+#include "Arduino.h"
+#include "RAM.h"
 
-#define RAM_e A0
-#define RAM_s A1
-#define MAR_s A2
-
-#define CLOCK_OUT     12
-#define DATA_OUT      11
-#define LATCH_OUT     10
-#define CLOCK_IN      9
-#define DATA_IN       8
-#define LATCH_IN      7
-#define RESET         2
 
 byte MAR ;
 byte RAM[256] ;
+bool RAM_set[256] ;
 
 byte prev_RAM_e ;
 byte prev_RAM_s ;
 byte prev_MAR_s ;
 
 
-void reset(){
+
+void debug() ;
+
+
+void reset(byte *prog){
   prev_RAM_e = 1 ;
   prev_RAM_s = 0 ;
   prev_MAR_s = 0 ;
 
   MAR = 0 ;
-  // TODO: reset RAM to all 0s or to the preloaded program
+  for (int i = 0 ; i < 256 ; i++){
+    RAM[i] = prog[i] ;
+    RAM_set[i] = 0 ;
+  }
   
   digitalWrite(CLOCK_OUT, LOW) ;
   digitalWrite(CLOCK_IN, LOW) ;
   digitalWrite(DATA_OUT, LOW) ;
   digitalWrite(LATCH_IN, LOW) ;
   digitalWrite(LATCH_OUT, HIGH) ;
+
+  digitalWrite(RESET, HIGH) ;
+  digitalWrite(RESET, LOW) ;
 }
 
 
-void setup() {
-  Serial.begin(9600) ;
+void setup_RAM(byte *prog){
   pinMode(RAM_e, INPUT) ;
   pinMode(RAM_s, INPUT) ;
   pinMode(MAR_s, INPUT) ;
@@ -46,12 +47,13 @@ void setup() {
   pinMode(DATA_IN, INPUT) ;
   pinMode(LATCH_OUT, OUTPUT) ;
   pinMode(LATCH_IN, OUTPUT) ;
-  
-  reset() ;
+  pinMode(RESET, OUTPUT) ;  
+
+  reset(prog) ;
 }
 
 
-void loop() {
+void loop_RAM() {
   byte cur_RAM_e = digitalRead(RAM_e) ;
   if (cur_RAM_e != prev_RAM_e){
     if (cur_RAM_e){
@@ -75,6 +77,7 @@ void loop() {
       digitalWrite(CLOCK_IN, HIGH) ;
       digitalWrite(LATCH_IN, HIGH) ;
       RAM[MAR] = shiftIn(DATA_IN, CLOCK_IN, MSBFIRST) ;
+      RAM_set[MAR] = 1 ;
       digitalWrite(LATCH_IN, LOW) ;
       debug() ;
     }
@@ -102,9 +105,20 @@ void loop() {
   }
 }
 
+
 void debug(){
   Serial.print("  MAR: ") ;
   Serial.print(MAR) ;
   Serial.print(", RAM[MAR]: ") ;
-  Serial.println(RAM[MAR]) ;
+  Serial.println(RAM[MAR]) ;  
+  Serial.println("RAM dump:") ;
+  
+  for (int i = 0 ; i < 256 ; i++){
+    if (RAM_set[i]){
+      Serial.print("  RAM[") ;
+      Serial.print(i) ;
+      Serial.print("] = ") ;
+      Serial.println(RAM[i]) ;      
+    }
+  }
 }
