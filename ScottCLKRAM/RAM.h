@@ -1,3 +1,7 @@
+#ifndef RAM_H
+#define RAM_H
+
+
 #define RAM_e A0
 #define RAM_s A1
 #define MAR_s A2
@@ -10,5 +14,11 @@
 #define LATCH_IN      7
 #define RESET         2
 
-void setup_RAM(byte *prog) ;
+
+void setup_RAM() ;
+void reset_RAM(byte prog[], byte prog_size);
 void loop_RAM() ;
+byte get_RAM(byte addr) ;
+
+
+#endif

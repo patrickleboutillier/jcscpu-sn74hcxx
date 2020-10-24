@@ -65,3 +65,8 @@ byte _JMPR(Reg rb){
 byte _JMP(){
   return B01000000 ;
 }
+
+
+byte _JMPIF(byte flags){
+  return B01010000 | flags ;
+}

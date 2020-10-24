@@ -2,14 +2,14 @@
 #include "CLK.h"
 
 
-bool clk_automatic = 1 ;
-bool clk_started = 0 ;
-unsigned long clk_then = millis() ;
-unsigned long clk_qtick = -1 ;
-byte clk_step = 0 ; 
+bool clk_automatic ;
+bool clk_started ;
+unsigned long clk_then ;
+long clk_qtick ;
+byte clk_step ; 
 
-bool buttonState = LOW ;
-bool lastButtonState = LOW ;
+bool buttonState ;
+bool lastButtonState ;
 unsigned long lastDebounceTime = 0 ;
 unsigned long debounceDelay = 50 ;
 
@@ -18,35 +18,52 @@ bool button_pressed(byte button) ;
 void qtick() ;
 
 
+void reset_CLK(){
+  clk_started = 0 ;
+  clk_then = millis() ;
+  clk_qtick = -1 ;
+  clk_step = 0 ; 
+
+  if (clk_automatic){
+    bool buttonState = LOW ;
+    bool lastButtonState = LOW ;
+  }
+  else {
+    buttonState = HIGH ;
+    lastButtonState = HIGH ;
+  }
+  
+  digitalWrite(CLK_WAITING, HIGH) ;  
+  digitalWrite(CLKSTP_ENABLE, HIGH) ; 
+}
+
+
 void setup_CLK(){
   pinMode(CLK_MANUAL, INPUT) ;
   pinMode(CLK_WAITING, OUTPUT) ;
-  digitalWrite(CLK_WAITING, HIGH) ;
 
   pinMode(CLKSTP_DATA, OUTPUT) ; 
   pinMode(CLKSTP_LATCH, OUTPUT) ; 
   pinMode(CLKSTP_CLOCK, OUTPUT) ; 
   pinMode(CLKSTP_ENABLE, OUTPUT) ; 
-  digitalWrite(CLKSTP_ENABLE, HIGH) ; 
-  
+
+  clk_automatic = 1 ;
   if (digitalRead(CLK_MANUAL) == LOW){
     // Request to have clock in manual mode
     clk_automatic = 0 ;
-    buttonState = HIGH ;
-    lastButtonState = HIGH ;
-  }
+  }  
 }
 
 
 void loop_CLK(){
   if (clk_automatic){
     if (! clk_started){
-      if (button_pressed(CLK_MANUAL)){
+      //if (button_pressed(CLK_MANUAL)){
         //delay(1000) ;
         clk_started = 1 ;
         digitalWrite(CLK_WAITING, LOW) ;
         return ;
-      }
+      //}
     }
     else {
       // Automatic clock
@@ -96,8 +113,8 @@ void qtick(){
     if (clk_step == 7){
       clk_step = 1 ;
     }
-    Serial.print("STEP = ") ;
-    Serial.println(clk_step) ;
+    //Serial.print("STEP = ") ;
+    //Serial.println(clk_step) ;
   }
   
   digitalWrite(CLKSTP_ENABLE, HIGH) ;
@@ -113,6 +130,11 @@ void qtick(){
     clk_s) ;
   digitalWrite(CLKSTP_LATCH, HIGH) ; 
   digitalWrite(CLKSTP_ENABLE, LOW) ;
+}
+
+
+long get_qtick(){
+  return clk_qtick ;
 }
 
 

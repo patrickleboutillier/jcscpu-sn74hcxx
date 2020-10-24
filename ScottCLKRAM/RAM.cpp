@@ -15,7 +15,7 @@ byte prev_MAR_s ;
 void debug() ;
 
 
-void reset(byte *prog){
+void reset_RAM(byte prog[], byte prog_size){
   prev_RAM_e = 1 ;
   prev_RAM_s = 0 ;
   prev_MAR_s = 0 ;
@@ -37,7 +37,7 @@ void reset(byte *prog){
 }
 
 
-void setup_RAM(byte *prog){
+void setup_RAM(){
   pinMode(RAM_e, INPUT) ;
   pinMode(RAM_s, INPUT) ;
   pinMode(MAR_s, INPUT) ;
@@ -48,8 +48,6 @@ void setup_RAM(byte *prog){
   pinMode(LATCH_OUT, OUTPUT) ;
   pinMode(LATCH_IN, OUTPUT) ;
   pinMode(RESET, OUTPUT) ;  
-
-  reset(prog) ;
 }
 
 
@@ -57,15 +55,15 @@ void loop_RAM() {
   byte cur_RAM_e = digitalRead(RAM_e) ;
   if (cur_RAM_e != prev_RAM_e){
     if (cur_RAM_e){
-      Serial.println("Disable RAM") ;
+      //Serial.println("Disable RAM") ;
     }
     else {
-      Serial.print("Enable RAM: ") ;
+      //Serial.print("Enable RAM: ") ;
       digitalWrite(LATCH_OUT, LOW) ;
       shiftOut(DATA_OUT, CLOCK_OUT, MSBFIRST, RAM[MAR]) ;
       digitalWrite(LATCH_OUT, HIGH) ; 
-      Serial.println(RAM[MAR]) ;
-      debug() ; 
+      //Serial.println(RAM[MAR]) ;
+      //debug() ; 
     }
     prev_RAM_e = cur_RAM_e ;
   }
@@ -73,16 +71,16 @@ void loop_RAM() {
   byte cur_RAM_s = digitalRead(RAM_s) ;
   if (cur_RAM_s != prev_RAM_s){
     if (cur_RAM_s){
-      Serial.print("Set RAM: ") ;
+      //Serial.print("Set RAM: ") ;
       digitalWrite(CLOCK_IN, HIGH) ;
       digitalWrite(LATCH_IN, HIGH) ;
       RAM[MAR] = shiftIn(DATA_IN, CLOCK_IN, MSBFIRST) ;
       RAM_set[MAR] = 1 ;
       digitalWrite(LATCH_IN, LOW) ;
-      debug() ;
+      //debug() ;
     }
     else {
-      Serial.println("Unset RAM") ;
+      //Serial.println("Unset RAM") ;
     }
     prev_RAM_s = cur_RAM_s ;
   }
@@ -90,19 +88,24 @@ void loop_RAM() {
   byte cur_MAR_s = digitalRead(MAR_s) ;
   if (cur_MAR_s != prev_MAR_s){
     if (cur_MAR_s){
-      Serial.print("Set MAR: ") ;
+      //Serial.print("Set MAR: ") ;
       digitalWrite(CLOCK_IN, HIGH) ;
       digitalWrite(LATCH_IN, HIGH) ;
       MAR = shiftIn(DATA_IN, CLOCK_IN, MSBFIRST) ;
       digitalWrite(LATCH_IN, LOW) ;
-      Serial.println(MAR) ; 
-      debug() ;
+      //Serial.println(MAR) ; 
+      //debug() ;
     }
     else {
-      Serial.println("Unset MAR") ;
+      //Serial.println("Unset MAR") ;
     }
     prev_MAR_s = cur_MAR_s ;
   }
+}
+
+
+byte get_RAM(byte addr){
+  return RAM[addr] ;
 }
 
 
