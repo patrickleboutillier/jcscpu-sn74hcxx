@@ -24,8 +24,10 @@ byte prog[] = {
 
 
 Prog progs[] = {
-  PROG("test CLF", prog, []() -> bool { return (get_RAM(100) == 20) ; }),
-  prog42,  
+  // PROG("test CLF", prog, []() -> bool { return (get_RAM(100) == 20) ; }),
+  prog42,
+  prog5x5,
+  prog10print,  
 } ;
 
 

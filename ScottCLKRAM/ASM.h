@@ -19,12 +19,18 @@ byte _DATA(Reg rb) ;
 byte _JMPR(Reg rb) ;
 byte _JMP() ;
 byte _JMPIF(byte flags) ;
+byte _IO(byte mode, Reg rb) ;
 
 
 #define C   B1000
 #define A   B0100
 #define E   B0010
 #define Z   B0001
+
+#define IN_DATA   B0000
+#define IN_ADDR   B0100
+#define OUT_DATA  B1000
+#define OUT_ADDR  B1100    
 
 // ALU instructions
 #define ADD(ra, rb)       _ADD(ra, rb)
@@ -64,5 +70,9 @@ byte _JMPIF(byte flags) ;
 #define CLF               B01100000
 #define HALT              B01100001
 
+#define IND(rb)          _IO(IN_DATA, rb)
+#define INA(rb)          _IO(IN_ADDR, rb)
+#define OUTD(rb)         _IO(OUT_DATA, rb)
+#define OUTA(rb)         _IO(OUT_ADDR, rb)
 
 #endif

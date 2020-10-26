@@ -7,12 +7,12 @@ byte _ADD(Reg ra, Reg rb){
 }
 
 
-byte _SHL(Reg ra, Reg rb){
+byte _SHR(Reg ra, Reg rb){
   return B10010000 | (ra << 2) | rb ;
 }
 
 
-byte _SHR(Reg ra, Reg rb){
+byte _SHL(Reg ra, Reg rb){
   return B10100000 | (ra << 2) | rb ;
 }
 
@@ -69,4 +69,8 @@ byte _JMP(){
 
 byte _JMPIF(byte flags){
   return B01010000 | flags ;
+}
+
+byte _IO(byte mode, Reg rb){
+  return B01110000 | mode | rb ;
 }
