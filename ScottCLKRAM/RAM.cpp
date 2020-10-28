@@ -4,7 +4,6 @@
 
 byte MAR ;
 byte RAM[256] ;
-bool RAM_set[256] ;
 
 byte prev_RAM_e ;
 byte prev_RAM_s ;
@@ -23,7 +22,6 @@ void reset_RAM(byte prog[], byte prog_size){
   MAR = 0 ;
   for (int i = 0 ; i < 256 ; i++){
     RAM[i] = prog[i] ;
-    RAM_set[i] = 0 ;
   }
   
   digitalWrite(CLOCK_OUT, LOW) ;
@@ -31,9 +29,6 @@ void reset_RAM(byte prog[], byte prog_size){
   digitalWrite(DATA_OUT, LOW) ;
   digitalWrite(LATCH_IN, LOW) ;
   digitalWrite(LATCH_OUT, HIGH) ;
-
-  digitalWrite(RESET, HIGH) ;
-  digitalWrite(RESET, LOW) ;
 }
 
 
@@ -47,7 +42,6 @@ void setup_RAM(){
   pinMode(DATA_IN, INPUT) ;
   pinMode(LATCH_OUT, OUTPUT) ;
   pinMode(LATCH_IN, OUTPUT) ;
-  pinMode(RESET, OUTPUT) ;  
 }
 
 
@@ -75,7 +69,6 @@ void loop_RAM() {
       digitalWrite(CLOCK_IN, HIGH) ;
       digitalWrite(LATCH_IN, HIGH) ;
       RAM[MAR] = shiftIn(DATA_IN, CLOCK_IN, MSBFIRST) ;
-      RAM_set[MAR] = 1 ;
       digitalWrite(LATCH_IN, LOW) ;
       //debug() ;
     }
@@ -104,8 +97,8 @@ void loop_RAM() {
 }
 
 
-byte get_RAM(byte addr){
-  return RAM[addr] ;
+byte* get_RAM(){
+  return RAM ;
 }
 
 
@@ -114,14 +107,4 @@ void debug(){
   Serial.print(MAR) ;
   Serial.print(", RAM[MAR]: ") ;
   Serial.println(RAM[MAR]) ;  
-  Serial.println("RAM dump:") ;
-  
-  for (int i = 0 ; i < 256 ; i++){
-    if (RAM_set[i]){
-      Serial.print("  RAM[") ;
-      Serial.print(i) ;
-      Serial.print("] = ") ;
-      Serial.println(RAM[i]) ;      
-    }
-  }
 }

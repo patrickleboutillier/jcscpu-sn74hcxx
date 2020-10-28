@@ -12,13 +12,12 @@
 #define CLOCK_IN      9
 #define DATA_IN       8
 #define LATCH_IN      7
-#define RESET         2
 
 
 void setup_RAM() ;
 void reset_RAM(byte prog[], byte prog_size);
 void loop_RAM() ;
-byte get_RAM(byte addr) ;
+byte* get_RAM() ;
 
 
 #endif

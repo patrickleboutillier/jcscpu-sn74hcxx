@@ -1,60 +1,78 @@
 #include "CLK.h"
 #include "RAM.h"
-#include "ASM.h"
 #include "PROGS.h"
 
 
 #define HALT_PIN    A3
+#define RESET_PIN    2
+
 
 bool halted = 0 ;
-byte nb_progs = 0 ;
-byte cur_prog = 0 ;
+Program* cur_prog = NULL ;
 
 
-byte prog[] = {
-  DATA(R0, B10101010),
-  XOR(R0, R0),
-  CLF,
-  JCAEZ(11),
-  DATA(R0, 20),
-  DATA(R1, 100),
-  ST(R1, R0),
-  HALT,
-} ;
+Program *test(){
+  static byte insts[16] ;
+  static Program p("test", insts, NULL) ;
+  if (p.getSize() == 0){
+    p.DATA(R0, B10101010) ;
+    p.XOR(R0, R0) ;
+    p.CLF() ;
+    //p.JCAEZ(11) ;
+    p.DATA(R0, 20) ;
+    p.DATA(R1, 100) ;
+    p.ST(R1, R0) ;
+    p.HALT() ;
+  }
+  
+  return &p ;
+}
 
 
-Prog progs[] = {
-  // PROG("test CLF", prog, []() -> bool { return (get_RAM(100) == 20) ; }),
-  prog42,
-  prog5x5,
-  prog10print,  
-} ;
+Program* progGen() {
+  static int i = 0 ;
+  static Program* progs[] = {
+    prog42(),
+    prog5x5(),
+    prog10print(),
+  } ;
+
+  int n = sizeof(progs) / sizeof(progs[0]) ;
+  Program *ret = (i < n ? progs[i] : NULL) ;
+  i++ ;
+
+  return ret ;
+}
 
 
-void run_prog(byte n){
-    Serial.print("Program #") ;
-    Serial.print(n) ;
-    Serial.print(": '") ;
-    Serial.print(progs[n].name) ;
+void run_program(Program *prog, bool reset){
+    Serial.print("Program: '") ;
+    Serial.print(prog->getName()) ;
     Serial.print("' (size=") ;
-    Serial.print(progs[n].len) ;
+    Serial.print(prog->getSize()) ;
     Serial.println(" bytes)") ;
 
+    cur_prog = prog ;
     reset_CLK() ;
-    reset_RAM(progs[n].insts, progs[n].len) ;
+    reset_RAM(prog->toByteArray(), prog->getSize()) ;
+
+    if (reset){
+      digitalWrite(RESET_PIN, HIGH) ;
+      delay(100) ;
+      digitalWrite(RESET_PIN, LOW) ;
+    }
 }
 
 
 void setup() {
   Serial.begin(9600) ;
   Serial.println("RAM unit booting...") ;
-  nb_progs = sizeof(progs) / sizeof(progs[0]) ;
-  Serial.print(nb_progs) ;
-  Serial.println(" programs in sequence") ;
-
+  
+  pinMode(RESET_PIN, OUTPUT) ; 
+  
   setup_CLK() ;
   setup_RAM() ;
-  run_prog(cur_prog) ; 
+  run_program(progGen(), true) ; 
 }
 
 
@@ -79,18 +97,20 @@ void loop() {
 
 void halt(){
   Serial.print("Program '") ;
-  Serial.print(progs[cur_prog].name) ;
+  Serial.print(cur_prog->getName()) ;
   Serial.print("' halted with ") ;
-  if (! (*progs[cur_prog].halt)()){
+  if (! cur_prog->runHaltTest(get_RAM())){
     Serial.println("FAILURE!!!") ;
   }
   else {
     Serial.println("SUCCESS.") ;     
   }
-  
-  cur_prog++ ;
-  if (cur_prog < nb_progs){
-    run_prog(cur_prog) ;
+
+  Serial.println("Sleeping 3 seconds...") ;
+  delay(3000) ;
+  Program *next_prog = progGen() ;
+  if (next_prog != NULL){
+    run_program(next_prog, true) ;
   }
   else {
     Serial.println(F("HALTING (No more programs to run!)")) ;

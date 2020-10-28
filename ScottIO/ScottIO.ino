@@ -16,10 +16,10 @@
 #define RESET         
 
 // Control pins
-#define IO_e      9
+#define IO_e     11
 #define IO_s     12
-#define IO_mode  10
-#define IO_type  11
+#define IO_mode   9
+#define IO_type  10
 
 
 byte cur_dev = 0 ;
@@ -42,9 +42,10 @@ void reset_IO(){
   cur_pos = 0 ;
   for (byte i = 0 ; i < 32 ; i++){
     buf[i] = ' ' ;
-    tty_put(buf[i]) ;
   }
   buf[32] = '\0' ;
+  tty_put(' ') ;
+  
   cur_pos = 0 ;
 
   digitalWrite(CLOCK_OUT, LOW) ;
@@ -85,6 +86,14 @@ void setup(){
 
 void loop(){
   byte cur_IO_e = digitalRead(IO_e) ;
+  byte cur_IO_s = digitalRead(IO_s) ;
+  
+  if (cur_IO_e && cur_IO_s){
+    Serial.println("RESET") ;
+    reset_IO() ;
+    return ;
+  }
+  
   if (cur_IO_e != prev_IO_e){
     if (cur_IO_e){
       if (digitalRead(IO_mode) == LOW){ // INPUT
@@ -103,7 +112,6 @@ void loop(){
     prev_IO_e = cur_IO_e ;
   }
 
-  byte cur_IO_s = digitalRead(IO_s) ;
   if (cur_IO_s != prev_IO_s){
     if (cur_IO_s){
       Serial.println(cur_IO_s) ;
@@ -131,6 +139,8 @@ void loop(){
     }
     prev_IO_s = cur_IO_s ;
   }
+
+
 }
 
 
@@ -142,7 +152,7 @@ void dispatch_input(byte b){
       break ;
     case TTY_NUM:
       char s[8] ;
-      sprintf(s, "%d", b) ;
+      sprintf(s, "%4d", b) ;
       for (byte i = 0 ; i < strlen(s) ; i++){
         tty_put(s[i]) ;
       }
