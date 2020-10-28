@@ -114,9 +114,6 @@ void loop(){
 
   if (cur_IO_s != prev_IO_s){
     if (cur_IO_s){
-      Serial.println(cur_IO_s) ;
-      Serial.println(digitalRead(IO_mode)) ;
-      Serial.println(digitalRead(IO_type)) ;
       if (digitalRead(IO_mode) == HIGH){ // OUTPUT
         if (digitalRead(IO_type) == LOW){ // DATA
           digitalWrite(CLOCK_IN, HIGH) ;
@@ -139,8 +136,6 @@ void loop(){
     }
     prev_IO_s = cur_IO_s ;
   }
-
-
 }
 
 
