@@ -25,8 +25,8 @@ void reset_CLK(){
   clk_step = 0 ; 
 
   if (clk_automatic){
-    bool buttonState = LOW ;
-    bool lastButtonState = LOW ;
+    buttonState = LOW ;
+    lastButtonState = LOW ;
   }
   else {
     buttonState = HIGH ;
@@ -48,7 +48,7 @@ void setup_CLK(){
   pinMode(CLKSTP_ENABLE, OUTPUT) ; 
 
   clk_automatic = 1 ;
-  if (digitalRead(CLK_MANUAL) == LOW){
+  if (digitalRead(CLK_MANUAL) == HIGH){
     // Request to have clock in manual mode
     clk_automatic = 0 ;
   }  
@@ -68,7 +68,7 @@ void loop_CLK(){
     else {
       // Automatic clock
       unsigned long clk_now = millis() ;
-      if ((clk_now - clk_then) > (1000 / (CLK_HZ * 4))){
+      if ((clk_now - clk_then) >= (1000 / (CLK_HZ * 4))){
         qtick() ;
         clk_then = clk_now ;
       }

@@ -17,6 +17,7 @@ class Program {
     byte* toByteArray() ;
     void push_back(byte b) ;
     bool runHaltTest(byte *RAM) ;
+    void reset() ;
     
     void ADD(Reg ra, Reg rb) ;
     void SHL(Reg ra, Reg rb) ;
@@ -32,6 +33,9 @@ class Program {
     void JMPR(Reg rb) ;
     void JMP(byte addr) ;
     void JC(byte addr) ;
+    void JA(byte addr) ;
+    void JE(byte addr) ;
+    void JZ(byte addr) ;
     void CLF() ;
     void HALT() ;
     void IND(Reg rb) ;

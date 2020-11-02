@@ -43,6 +43,11 @@ bool Program::runHaltTest(byte *RAM){
 }
 
 
+void Program::reset(){
+  _idx = 0 ;
+}
+
+
 void Program::push_back(byte b){
   _backing[_idx] = b ;
   _idx++ ;
@@ -117,6 +122,21 @@ void Program::JMP(byte addr){
 
 void Program::JC(byte addr){
   push_back(B01010000 | C) ;
+  push_back(addr) ;
+}
+
+void Program::JA(byte addr){
+  push_back(B01010000 | A) ;
+  push_back(addr) ;
+}
+
+void Program::JE(byte addr){
+  push_back(B01010000 | E) ;
+  push_back(addr) ;
+}
+
+void Program::JZ(byte addr){
+  push_back(B01010000 | Z) ;
   push_back(addr) ;
 }
 

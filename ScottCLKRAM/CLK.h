@@ -10,7 +10,7 @@
 #define CLKSTP_CLOCK  5
 #define CLKSTP_ENABLE 6
 
-#define CLK_HZ 64
+#define CLK_HZ 256
 
 
 void setup_CLK() ;
