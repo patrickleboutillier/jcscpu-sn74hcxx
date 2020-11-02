@@ -1,7 +1,7 @@
 #include "CLK.h"
 #include "RAM.h"
 #include "PROGS.h"
-#include "genprog.h"
+#include "gentest.h"
 
 
 #define HALT_PIN    A3
@@ -48,7 +48,7 @@ Program* progGen() {
 
 byte RAM_sim[256] ;
 Program* testProgGen() {
-  static int n = 0 ;
+  static long n = 0 ;
   static char name[32] ;
   static byte insts[256] ;
   static Program p(name, insts, [](byte *RAM) -> bool { return compare_RAMS(RAM_sim, RAM) ; }) ;

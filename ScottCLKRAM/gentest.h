@@ -10,5 +10,6 @@ void store_flags(Program *p) ;
 bool compare_RAMS(byte *RAM_sim, byte *RAM_cpu) ;
 void do_instruction(Program *p, byte inst, byte jinst, byte flags, byte ra, byte rb, byte rx, byte data) ;
 void simulate_instruction(Program *p, byte *RAM, byte inst, byte jinst, byte flags, byte ra, byte rb, byte rx, byte data, byte ci) ;
+void insert_jinst(Program *p, byte jinst, byte addr) ;
 
 #endif

@@ -120,23 +120,99 @@ void Program::JMP(byte addr){
 }
 
 
+// Jump if all flags are off
+void Program::JX(byte addr){
+  push_back(B01010000) ;
+  push_back(addr) ;
+}
+
+
 void Program::JC(byte addr){
   push_back(B01010000 | C) ;
   push_back(addr) ;
 }
+
 
 void Program::JA(byte addr){
   push_back(B01010000 | A) ;
   push_back(addr) ;
 }
 
+
 void Program::JE(byte addr){
   push_back(B01010000 | E) ;
   push_back(addr) ;
 }
 
+
 void Program::JZ(byte addr){
   push_back(B01010000 | Z) ;
+  push_back(addr) ;
+}
+
+
+void Program::JCA(byte addr){
+  push_back(B01010000 | C | A) ;
+  push_back(addr) ;
+}
+
+
+void Program::JCE(byte addr){
+  push_back(B01010000 | C | E) ;
+  push_back(addr) ;
+}
+
+
+void Program::JCZ(byte addr){
+  push_back(B01010000 | C | Z) ;
+  push_back(addr) ;
+}
+
+
+void Program::JAE(byte addr){
+  push_back(B01010000 | A | E) ;
+  push_back(addr) ;
+}
+
+
+void Program::JAZ(byte addr){
+  push_back(B01010000 | A | Z) ;
+  push_back(addr) ;
+}
+
+
+void Program::JEZ(byte addr){
+  push_back(B01010000 | E | Z) ;
+  push_back(addr) ;
+}
+
+
+void Program::JCAE(byte addr){
+  push_back(B01010000 | C | A | E) ;
+  push_back(addr) ;
+}
+
+
+void Program::JCAZ(byte addr){
+  push_back(B01010000 | C | A | Z) ;
+  push_back(addr) ;
+}
+
+
+void Program::JCEZ(byte addr){
+  push_back(B01010000 | C | E | Z) ;
+  push_back(addr) ;
+}
+
+
+void Program::JAEZ(byte addr){
+  push_back(B01010000 | A | E | Z) ;
+  push_back(addr) ;
+}
+
+
+void Program::JCAEZ(byte addr){
+  push_back(B01010000 | C | A | E | Z) ;
   push_back(addr) ;
 }
 

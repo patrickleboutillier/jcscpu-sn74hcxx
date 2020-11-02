@@ -1,7 +1,10 @@
-#include "genprog.h"
+#include "gentest.h"
 
 
 Reg rmap[] = {R0, R1, R2, R3} ;
+
+#define REG_STATE   248
+#define FLAG_STATE  252
 
 #define ALU_INSTS   0b1000, 0b1001, 0b1010, 0b1011, 0b1100, 0b1101, 0b1110, 0b1111, 0b0110
 #define BUS_INSTS   0b0000, 0b0001, 0b0010
@@ -16,11 +19,11 @@ char buf[64] ;
   
 // We assume RAM has been cleared just before calling this function
 void gen_test_prog(byte *RAM, Program *p){  
-  // Generate random values between 64 and 248 to testing purposes
-  // Above 64 to ensure we don't write over our program
-  // Below 248 to leave place at the end to store our state
+  // Generate random values between 128 and REG_STATE to testing purposes
+  // Above 128 to ensure we don't write over our program
+  // Below REG_STATE to leave place at the end to store our state
   byte minval = 128 ;
-  byte maxval = 248 ;
+  byte maxval = REG_STATE ;
   byte r0 = random(minval, maxval) ;
   byte r1 = random(minval, maxval) ;
   byte r2 = random(minval, maxval) ;
@@ -32,12 +35,12 @@ void gen_test_prog(byte *RAM, Program *p){
   
   // Store these values in RAM in the proper reserved slots, and generate the equivalent 
   // instructions
-  RAM[248] = r0 ;
-  RAM[249] = r1 ;
-  RAM[250] = r2 ;
-  RAM[251] = r3 ;
+  RAM[REG_STATE] = r0 ;
+  RAM[REG_STATE+1] = r1 ;
+  RAM[REG_STATE+2] = r2 ;
+  RAM[REG_STATE+3] = r3 ;
   for (byte i = 0 ; i < 4 ; i++){
-      p->DATA(R1, 248+i) ;
+      p->DATA(R1, REG_STATE+i) ;
       p->DATA(R0, r[i]) ;
       p->ST(R1, R0) ;
   }
@@ -56,12 +59,12 @@ void gen_test_prog(byte *RAM, Program *p){
   Serial.println(buf) ;
 
   // Store them in the proper reserved slots and generate the equivalent instructions.
-  RAM[252] = c ;
-  RAM[253] = a ;
-  RAM[254] = e ;
-  RAM[255] = z ;
+  RAM[FLAG_STATE] = c ;
+  RAM[FLAG_STATE+1] = a ;
+  RAM[FLAG_STATE+2] = e ;
+  RAM[FLAG_STATE+3] = z ;
   for (byte i = 0 ; i < 4 ; i++){
-      p->DATA(R1, 252+i) ;
+      p->DATA(R1, FLAG_STATE+i) ;
       p->DATA(R0, f[i]) ;
       p->ST(R1, R0) ;
   }
@@ -111,16 +114,16 @@ void gen_test_prog(byte *RAM, Program *p){
   
 
   // Now that the instruction is done, we need to save the register and flags state to RAM.
-  p->DATA(rmap[rx], 248+ra) ;
+  p->DATA(rmap[rx], REG_STATE+ra) ;
   p->ST(rmap[rx], rmap[ra]) ;
-  p->DATA(rmap[rx], 248+rb) ;
+  p->DATA(rmap[rx], REG_STATE+rb) ;
   p->ST(rmap[rx], rmap[rb]) ;
 
   // Now we need to store the resulting flags to RAM.
   // Start by setting all the flags locations
   p->DATA(R0, 1) ;
   for (byte i = 0 ; i < 4 ; i++){
-    p->DATA(R1, 252+i) ;
+    p->DATA(R1, FLAG_STATE+i) ;
     p->ST(R1, R0) ;
   }
   store_flags(p) ;
@@ -205,16 +208,16 @@ void store_flags(Program *p) {
   // Insert a series of jump instructions that will set the flags on the correct location.
   p->DATA(R0, 0) ;
   p->JC(p->getSize() + 5) ;
-  p->DATA(R1, 252) ;
+  p->DATA(R1, FLAG_STATE) ;
   p->ST(R1, R0) ;
   p->JA(p->getSize() + 5) ;
-  p->DATA(R1, 253) ;
+  p->DATA(R1, FLAG_STATE+1) ;
   p->ST(R1, R0) ;
   p->JE(p->getSize() + 5) ;
-  p->DATA(R1, 254) ;
+  p->DATA(R1, FLAG_STATE+2) ;
   p->ST(R1, R0) ;
   p->JZ(p->getSize() + 5) ;
-  p->DATA(R1, 255) ;
+  p->DATA(R1, FLAG_STATE+3) ;
   p->ST(R1, R0) ;
 }
 
@@ -223,19 +226,19 @@ void store_flags(Program *p) {
 void simulate_instruction(Program *p, byte *RAM, byte inst, byte jinst, byte flags, byte ra, byte rb, byte rx, byte data, byte ci) {
   int set_flags = 0 ;
   byte c = 0 ;
-  byte a = RAM[248+ra] > RAM[248+rb] ;
-  byte e = RAM[248+ra] == RAM[248+rb] ;
+  byte a = RAM[REG_STATE+ra] > RAM[REG_STATE+rb] ;
+  byte e = RAM[REG_STATE+ra] == RAM[REG_STATE+rb] ;
   int z = -1 ;
 
   switch (inst){
     case 0b0000:       // LD
-      RAM[248+rb] = RAM[RAM[248+ra]] ;
+      RAM[REG_STATE+rb] = RAM[RAM[REG_STATE+ra]] ;
        break ;
     case 0b0001:       // ST
-      RAM[RAM[248+ra]] = RAM[248+rb] ;
+      RAM[RAM[REG_STATE+ra]] = RAM[REG_STATE+rb] ;
       break ;
     case 0b0010:       // DATA
-      RAM[248+rb] = data ;
+      RAM[REG_STATE+rb] = data ;
       break ;
     case 0b0011:       // JMPR
     case 0b0100:       // JMP
@@ -249,7 +252,7 @@ void simulate_instruction(Program *p, byte *RAM, byte inst, byte jinst, byte fla
       }
       else {
         // No jump, produce side-effect.
-        RAM[RAM[248+ra]] = RAM[248+rb] ;
+        RAM[RAM[REG_STATE+ra]] = RAM[REG_STATE+rb] ;
       }
       break ;
     case 0b0110:        // CLF
@@ -260,36 +263,36 @@ void simulate_instruction(Program *p, byte *RAM, byte inst, byte jinst, byte fla
       set_flags = 1 ;
       break ;
     case 0b1000: {      // ADD
-      int sum = RAM[248+ra] + RAM[248+rb] + ci ;
+      int sum = RAM[REG_STATE+ra] + RAM[REG_STATE+rb] + ci ;
       c = sum > 255 ;
-      RAM[248+rb] = sum % 256 ;
+      RAM[REG_STATE+rb] = sum % 256 ;
       set_flags = 1 ;
       break ;
     }
     case 0b1001:        // SHR
-      c = RAM[248+ra] % 2 ;
-      RAM[248+rb] = (RAM[248+ra] + 256*ci) >> 1 ;
+      c = RAM[REG_STATE+ra] % 2 ;
+      RAM[REG_STATE+rb] = (RAM[REG_STATE+ra] + 256*ci) >> 1 ;
       set_flags = 1 ;
       break ;
     case 0b1010:        // SHL
-      c = RAM[248+ra] >= 128 ;
-      RAM[248+rb] = ((RAM[248+ra] << 1) % 256) + ci ;
+      c = RAM[REG_STATE+ra] >= 128 ;
+      RAM[REG_STATE+rb] = ((RAM[REG_STATE+ra] << 1) % 256) + ci ;
       set_flags = 1 ;
       break ;
     case 0b1011:        // NOT
-      RAM[248+rb] = (~ RAM[248+ra]) % 256 ;
+      RAM[REG_STATE+rb] = (~ RAM[REG_STATE+ra]) % 256 ;
       set_flags = 1 ;
       break ;
     case 0b1100:        // AND
-      RAM[248+rb] = RAM[248+ra] & RAM[248+rb] ;
+      RAM[REG_STATE+rb] = RAM[REG_STATE+ra] & RAM[REG_STATE+rb] ;
       set_flags = 1 ;
       break ;
     case 0b1101:        // OR
-      RAM[248+rb] = RAM[248+ra] | RAM[248+rb] ;
+      RAM[REG_STATE+rb] = RAM[REG_STATE+ra] | RAM[REG_STATE+rb] ;
       set_flags = 1 ;
       break ;
     case 0b1110:        // XOR
-      RAM[248+rb] = RAM[248+ra] ^ RAM[248+rb] ;
+      RAM[REG_STATE+rb] = RAM[REG_STATE+ra] ^ RAM[REG_STATE+rb] ;
       set_flags = 1 ;
       break ;
     case 0b1111:        // CMP
@@ -298,12 +301,12 @@ void simulate_instruction(Program *p, byte *RAM, byte inst, byte jinst, byte fla
   }
   
   if (set_flags){
-    RAM[252] = c ;
-    RAM[253] = a ;
-    RAM[254] = e ;
-    RAM[255] = ((z != -1) ? z : ! RAM[248+rb]) ;
+    RAM[FLAG_STATE] = c ;
+    RAM[FLAG_STATE+1] = a ;
+    RAM[FLAG_STATE+2] = e ;
+    RAM[FLAG_STATE+3] = ((z != -1) ? z : ! RAM[REG_STATE+rb]) ;
     if (set_flags == -1){
-      RAM[255] = 1 ;
+      RAM[FLAG_STATE+3] = 1 ;
     }
   }
 }
@@ -335,10 +338,11 @@ void do_instruction(Program *p, byte inst, byte jinst, byte flags, byte ra, byte
       p->ST(rmap[ra], rmap[rb]) ;
       break ;
     case 0b0101: {    // JXXX
-      byte addr = p->getSize() + 3 ;
-      //warn sprintf("flags: %04b", $flags) ;
-      p->push_back(0b01010000 | jinst) ;
-      p->push_back(addr) ;
+      byte addr = p->getSize() + 3 ; 
+      insert_jinst(p, jinst, addr) ;
+      // warn sprintf("flags: %04b", $flags) ;
+      // p->push_back(0b01010000 | jinst) ;
+      // p->push_back(addr) ;
       // Create a side-effect if the jump is not performed
       p->ST(rmap[ra], rmap[rb]) ;
       break ;
@@ -371,6 +375,62 @@ void do_instruction(Program *p, byte inst, byte jinst, byte flags, byte ra, byte
       p->CMP(rmap[ra], rmap[rb]) ;
       break ;
   }
+}
+
+
+void insert_jinst(Program *p, byte jinst, byte addr){
+  switch (jinst) {
+    case 0b0000:
+      p->JX(addr) ;
+      break ;
+    case 0b0001:
+      p->JZ(addr) ;
+      break ;
+    case 0b0010:
+      p->JE(addr) ;
+      break ;
+    case 0b0011:
+      p->JEZ(addr) ;
+      break ;
+    case 0b0100:
+      p->JA(addr) ;
+      break ;
+    case 0b0101:
+      p->JAZ(addr) ;
+      break ;
+    case 0b0110:
+      p->JAE(addr) ;
+      break ;
+    case 0b0111:
+      p->JAEZ(addr) ;
+      break ;
+    case 0b1000:
+      p->JC(addr) ;
+      break ;
+    case 0b1001:
+      p->JCZ(addr) ;
+      break ;
+    case 0b1010:
+      p->JCE(addr) ;
+      break ;
+    case 0b1011:
+      p->JCEZ(addr) ;
+      break ;
+    case 0b1100:
+      p->JCA(addr) ;
+      break ;
+    case 0b1101:
+      p->JCAZ(addr) ;
+      break ;
+    case 0b1110:
+      p->JCAE(addr) ;
+      break ;
+    case 0b1111:
+      p->JCAEZ(addr) ;
+      break ;
+  }
+
+  return 2 ;
 }
 
 
