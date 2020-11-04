@@ -53,7 +53,7 @@ Program* testProgGen() {
   static byte insts[256] ;
   static Program p(name, insts, [](byte *RAM) -> bool { return compare_RAMS(RAM_sim, RAM) ; }) ;
 
-  sprintf(name, "test-%d", n++) ;
+  sprintf(name, "test-%ld", n++) ;
   p.reset() ;
   for (int i = 0 ; i < 256 ; i++){
     insts[i] = 0 ;

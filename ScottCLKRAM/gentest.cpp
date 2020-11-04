@@ -3,8 +3,9 @@
 
 Reg rmap[] = {R0, R1, R2, R3} ;
 
-#define REG_STATE   248
-#define FLAG_STATE  252
+#define REG_STATE   0
+#define FLAG_STATE  4
+#define PROG_START  8
 
 #define ALU_INSTS   0b1000, 0b1001, 0b1010, 0b1011, 0b1100, 0b1101, 0b1110, 0b1111, 0b0110
 #define BUS_INSTS   0b0000, 0b0001, 0b0010
@@ -18,12 +19,24 @@ char buf[64] ;
 
   
 // We assume RAM has been cleared just before calling this function
-void gen_test_prog(byte *RAM, Program *p){  
-  // Generate random values between 128 and REG_STATE to testing purposes
+void gen_test_prog(byte *RAM, Program *p){
+  // First we select the instruction we are going to use.
+  byte inst = insts[random(sizeof(insts))] ;
+
+  // We are going to store the reg and flags state in RAM slots 1-8, si we must start off
+  // with a jump to address 9.
+  p->JMP(PROG_START) ;
+  for (byte i = 0 ; i < 8 ; i++){
+    p->CLF() ;
+  }
+  
+  // Generate random values between 128 and 256 to testing purposes
   // Above 128 to ensure we don't write over our program
-  // Below REG_STATE to leave place at the end to store our state
-  byte minval = 128 ;
-  byte maxval = REG_STATE ;
+  int minval = 128 ;
+  int maxval = 256 ;
+  if (inst > 7){ // ALU instruction, no addresses involved so we can use the entire RAM range.
+    minval = 0 ;
+  }
   byte r0 = random(minval, maxval) ;
   byte r1 = random(minval, maxval) ;
   byte r2 = random(minval, maxval) ;
@@ -77,13 +90,17 @@ void gen_test_prog(byte *RAM, Program *p){
   for (byte i = 0 ; i < 4 ; i++){
       p->DATA(rmap[i], r[i]) ;
   }
-  RAM[r0] = r0 ;
-  RAM[r1] = r1 ;
-  RAM[r2] = r2 ;
-  RAM[r3] = r3 ;
-  // Generate the equivalent instructions
-  for (byte i = 0 ; i < 4 ; i++){
-    p->ST(rmap[i], rmap[i]) ;
+  
+  if (inst < 8){  // non-ALU instruction, address contents are needed so we write values to RAM.
+    // Copy reg values to equivalent RAM address for address calculations
+    RAM[r0] = r0 ;
+    RAM[r1] = r1 ;
+    RAM[r2] = r2 ;
+    RAM[r3] = r3 ;
+    // Generate the equivalent instructions
+    for (byte i = 0 ; i < 4 ; i++){
+      p->ST(rmap[i], rmap[i]) ;
+    }
   }
 
 
@@ -103,7 +120,7 @@ void gen_test_prog(byte *RAM, Program *p){
 
 
   // Simulate instruction and update RAM
-  byte inst = insts[random(sizeof(insts))] ;
+
   byte jinst = random(1, 16) ;
   Serial.print("inst=") ;
   Serial.print(inst, BIN) ;
@@ -129,10 +146,12 @@ void gen_test_prog(byte *RAM, Program *p){
   store_flags(p) ;
   p->HALT() ;
 
-  // Copy Program p to RAM
+  // Copy Program p to RAM, skipping the state part.
   byte *backing = p->toByteArray() ;
   for (byte i = 0 ; i < p->getSize() ; i++){
-    RAM[i] = backing[i] ;
+    if (i >= PROG_START){
+      RAM[i] = backing[i] ;
+    }
   }
 }
 
@@ -340,9 +359,6 @@ void do_instruction(Program *p, byte inst, byte jinst, byte flags, byte ra, byte
     case 0b0101: {    // JXXX
       byte addr = p->getSize() + 3 ; 
       insert_jinst(p, jinst, addr) ;
-      // warn sprintf("flags: %04b", $flags) ;
-      // p->push_back(0b01010000 | jinst) ;
-      // p->push_back(addr) ;
       // Create a side-effect if the jump is not performed
       p->ST(rmap[ra], rmap[rb]) ;
       break ;
