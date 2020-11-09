@@ -15,7 +15,7 @@
 
 void setup_CLK() ;
 void reset_CLK() ;
-void loop_CLK() ;
+void loop_CLK(byte slowdown) ;
 long get_qtick() ;
 
 

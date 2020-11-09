@@ -2,12 +2,6 @@
 #include "Program.h"
 
 
-#define C   B1000
-#define A   B0100
-#define E   B0010
-#define Z   B0001
-
-
 Program::Program(char *name, byte *backing, bool (*halt_test)(byte *RAM)){
   // Here we will assume that the name passed is a global constant string.
   _name = name ;

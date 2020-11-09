@@ -55,7 +55,7 @@ void setup_CLK(){
 }
 
 
-void loop_CLK(){
+void loop_CLK(byte slowdown){
   if (clk_automatic){
     if (! clk_started){
       //if (button_pressed(CLK_MANUAL)){
@@ -68,7 +68,7 @@ void loop_CLK(){
     else {
       // Automatic clock
       unsigned long clk_now = millis() ;
-      if ((clk_now - clk_then) >= (1000 / (CLK_HZ * 4))){
+      if ((clk_now - clk_then) >= (1000 / ((CLK_HZ / slowdown) * 4))){
         qtick() ;
         clk_then = clk_now ;
       }

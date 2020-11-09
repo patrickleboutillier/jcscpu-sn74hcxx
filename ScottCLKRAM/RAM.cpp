@@ -21,6 +21,9 @@ void reset_RAM(byte prog[], byte prog_size){
 
   MAR = 0 ;
   for (int i = 0 ; i < 256 ; i++){
+    RAM[i] = 0 ;
+  }
+  for (int i = 0 ; i < prog_size ; i++){
     RAM[i] = prog[i] ;
   }
   

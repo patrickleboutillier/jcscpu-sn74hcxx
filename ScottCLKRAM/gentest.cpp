@@ -1,7 +1,9 @@
 #include "gentest.h"
 
 
-Reg rmap[] = {R0, R1, R2, R3} ;
+const Reg rmap[] = {R0, R1, R2, R3} ;
+const char *rdesc[] = {"R0", "R1", "R2", "R3"} ;
+
 
 #define REG_STATE   0
 #define FLAG_STATE  4
@@ -11,8 +13,7 @@ Reg rmap[] = {R0, R1, R2, R3} ;
 #define BUS_INSTS   0b0000, 0b0001, 0b0010
 #define JMP_INSTS   0b0011, 0b0100, 0b0101
 
-byte insts[] = {ALU_INSTS, BUS_INSTS, JMP_INSTS} ;
-// byte insts[] = {0b0101} ;
+const byte insts[] = {ALU_INSTS, BUS_INSTS, JMP_INSTS} ;
 
 // Used to print debug info
 char buf[64] ;
@@ -145,7 +146,7 @@ void gen_test_prog(byte *RAM, Program *p){
   }
   store_flags(p) ;
   p->HALT() ;
-
+  
   // Copy Program p to RAM, skipping the state part.
   byte *backing = p->toByteArray() ;
   for (byte i = 0 ; i < p->getSize() ; i++){
@@ -334,7 +335,7 @@ void simulate_instruction(Program *p, byte *RAM, byte inst, byte jinst, byte fla
 
 void do_instruction(Program *p, byte inst, byte jinst, byte flags, byte ra, byte rb, byte rx, byte data){
   switch (inst){
-    case 0b0000:     // LD
+    case 0b0000:      // LD
       p->LD(rmap[ra], rmap[rb]) ;
       break ;
     case 0b0001:      // ST
@@ -360,31 +361,31 @@ void do_instruction(Program *p, byte inst, byte jinst, byte flags, byte ra, byte
       byte addr = p->getSize() + 3 ; 
       insert_jinst(p, jinst, addr) ;
       // Create a side-effect if the jump is not performed
-      p->ST(rmap[ra], rmap[rb]) ;
+      p->ST(rmap[ra], rmap[rb]) ;     
       break ;
     }
-    case 0b0110:      // CLF
+    case 0b0110:      // CLF 
       p->CLF() ;
       break ;
     case 0b1000:      // ADD
-      p->ADD(rmap[ra], rmap[rb]) ;
+      p->ADD(rmap[ra], rmap[rb]) ; 
       break ;
-    case 0b1001:      // SHR
+    case 0b1001:      // SHR 
       p->SHR(rmap[ra], rmap[rb]) ;
       break ;
-    case  0b1010:     // SHL
+    case  0b1010:     // SHL 
       p->SHL(rmap[ra], rmap[rb]) ;
       break ;
-    case 0b1011:      // NOT
+    case 0b1011:      // NOT 
       p->NOT(rmap[ra], rmap[rb]) ;
       break ;
-    case 0b1100:      // AND
+    case 0b1100:      // AND  
       p->AND(rmap[ra], rmap[rb]) ;
       break ;
     case 0b1101:      // OR
       p->OR(rmap[ra], rmap[rb]) ;
       break ;
-    case 0b1110:      // XOR
+    case 0b1110:      // XOR 
       p->XOR(rmap[ra], rmap[rb]) ;
       break ;
     case 0b1111:      // CMP

@@ -10,6 +10,8 @@
 
 bool halted = 0 ;
 Program* cur_prog = NULL ;
+byte slowdown = 1 ;
+bool display = false ;
 
 
 Program *test(){
@@ -49,18 +51,54 @@ Program* progGen() {
 byte RAM_sim[256] ;
 Program* testProgGen() {
   static long n = 0 ;
-  static char name[32] ;
-  static byte insts[256] ;
+  static char name[33] ;
+  static byte insts[128] ;
   static Program p(name, insts, [](byte *RAM) -> bool { return compare_RAMS(RAM_sim, RAM) ; }) ;
 
-  sprintf(name, "test-%ld", n++) ;
+  sprintf(name, "test-%ld", n) ;
   p.reset() ;
-  for (int i = 0 ; i < 256 ; i++){
+  for (int i = 0 ; i < 128 ; i++){
     insts[i] = 0 ;
+  }
+  for (int i = 0 ; i < 256 ; i++){
     RAM_sim[i] = 0 ;
   }
-  gen_test_prog(RAM_sim, &p) ;
+     
+  if ((n % 100) == 0){
+    display = !display ;
+  }
+  else {
+    display = false ;
+  }
 
+  if (display){
+    // Generate the display program 
+    p.reset() ;
+    p.DATA(R0, 0) ;
+    p.OUTA(R0) ;
+    p.DATA(R0, 253) ; 
+    p.OUTD(R0) ;
+    p.DATA(R0, 255) ; 
+    p.OUTD(R0) ;
+    for (byte i = 0 ; i < strlen(name) ; i++){
+      p.DATA(R0, name[i]) ; 
+      p.OUTD(R0) ;
+    }
+    p.DATA(R0, 254) ; 
+    p.OUTD(R0) ;
+    p.HALT() ;
+    
+    slowdown = 2 ;    
+    sprintf(name, "display-%ld", n) ;
+
+    return &p ;
+  }
+  
+  // Generate the new program
+  gen_test_prog(RAM_sim, &p) ;  
+  n++ ;
+  slowdown = 1 ;
+  
   return &p ;
 }
 
@@ -108,7 +146,7 @@ void loop() {
     return ;
   }
   
-  loop_CLK() ;
+  loop_CLK(slowdown) ;
   loop_RAM() ;
 
   long qtick = get_qtick() ;
@@ -124,20 +162,23 @@ void loop() {
 
 void halt(){
   bool ok = 1 ;
-  if (! cur_prog->runHaltTest(get_RAM())){
-    ok = 0 ;
-    halted = 1 ;
-    return ;
-  }
 
-  Serial.print("Program '") ;
-  Serial.print(cur_prog->getName()) ;
-  Serial.print("' halted with ") ;
-  Serial.print(ok ? "SUCCESS." : "FAILURE!!!") ;
-  Serial.print(" after ") ;
-  Serial.print(millis() - start) ;
-  Serial.println(" ms.") ;  
-  
+  if (! display){
+    if (! cur_prog->runHaltTest(get_RAM())){
+     ok = 0 ;
+     halted = 1 ;
+     return ;
+    }
+
+    Serial.print("Program '") ;
+    Serial.print(cur_prog->getName()) ;
+    Serial.print("' halted with ") ;
+    Serial.print(ok ? "SUCCESS." : "FAILURE!!!") ;
+    Serial.print(" after ") ;
+    Serial.print(millis() - start) ;
+    Serial.println(" ms.") ;  
+  }
+    
   //Serial.println("Sleeping 3 seconds...") ;
   //delay(3000) ;
   Program *next_prog = (*prog)() ;

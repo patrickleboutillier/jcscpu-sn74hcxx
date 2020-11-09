@@ -31,7 +31,9 @@ byte prev_IO_s ;
 // Initialize LCC library
 LiquidCrystal lcd(A0, A1, A5, A4, A3, A2) ;    
 byte cur_pos = 0 ;
-char buf[33] ;
+char buf[32] ;
+
+bool refresh = true ;
 
 
 void reset_IO(){
@@ -39,11 +41,12 @@ void reset_IO(){
   prev_IO_s = LOW ;
 
   // Clear TTY buffer
+  refresh = true ;
+  cur_dev = 0 ;
   cur_pos = 0 ;
   for (byte i = 0 ; i < 32 ; i++){
     buf[i] = ' ' ;
   }
-  buf[32] = '\0' ;
   tty_put(' ') ;
   
   cur_pos = 0 ;
@@ -89,8 +92,8 @@ void loop(){
   byte cur_IO_s = digitalRead(IO_s) ;
   
   if (cur_IO_e && cur_IO_s){
-    Serial.println("RESET") ;
-    reset_IO() ;
+    // Serial.println("RESET") ;
+    // reset_IO() ;
     return ;
   }
   
@@ -120,8 +123,8 @@ void loop(){
           digitalWrite(LATCH_IN, HIGH) ;
           byte b = shiftIn(DATA_IN, CLOCK_IN, MSBFIRST) ;
           digitalWrite(LATCH_IN, LOW) ;
-          Serial.print("Read from bus:") ;
-          Serial.println(b) ;
+          //Serial.print("Read from bus:") ;
+          //Serial.println(b) ;
           dispatch_input(b) ;
         }
         else { // ADDR
@@ -135,6 +138,10 @@ void loop(){
       }
     }
     prev_IO_s = cur_IO_s ;
+  }
+
+  if (refresh){
+    tty_refresh() ;
   }
 }
 
@@ -177,8 +184,32 @@ byte get_output(){
 
 
 void tty_put(char c){
-  Serial.print("tty_put: ") ;
-  Serial.println(c) ;
+  //Serial.print("tty_put: ") ;
+  //Serial.println(c) ;
+  
+  bool is_char = true ;
+   
+  if (c == '\n'){
+    // Newline
+    cur_pos = (cur_pos > 15 ? 32 : 16) ;
+    is_char = false ;
+  }
+  else if ((byte)c == 255){  // CLEAR SCREEN
+    for (byte i = 0 ; i < 32 ; i++){
+        buf[i] = ' ' ;
+    }
+    is_char = false ;
+    cur_pos = 0 ;
+  }
+  else if ((byte)c == 253){  // BUFFER CHARS
+    refresh = false ;
+    return ;
+  }
+  else if ((byte)c == 254){  // PRINT CHARS
+    refresh = true ;
+    return ;
+  }
+  
   if (cur_pos == 32){
     // Scroll up
     for (byte j = 0 ; j < 16 ; j++){
@@ -187,22 +218,38 @@ void tty_put(char c){
     }
     cur_pos = 16 ;
   }
-    
-  buf[cur_pos] = c ;
-  cur_pos++ ;
 
-  for (int i = 0 ; i < 16 ; i++){
-    lcd.setCursor(i, 0) ;
-    tty_write(buf[i]) ;
-  }
-  for (int i = 0 ; i < 16 ; i++){
-    lcd.setCursor(i, 1) ;
-    tty_write(buf[i+16]) ; 
+  if (is_char){
+    buf[cur_pos] = c ;
+    cur_pos++ ;
   }
 }
 
 
+void tty_refresh(){
+  static char cache[32] = {} ;
+
+  // TODO: This should be optimized to only print chars that are different.
+  for (int i = 0 ; i < 16 ; i++){
+    if (buf[i] != cache[i]){
+      lcd.setCursor(i, 0) ;
+      tty_write(buf[i]) ;
+    }
+  }
+  for (int i = 0 ; i < 16 ; i++){
+    if (buf[i+16] != cache[i+16]){
+      lcd.setCursor(i, 1) ;
+      tty_write(buf[i+16]) ; 
+    }
+  }
+  
+  memcpy(cache, buf, 32) ;  
+}
+
+
 void tty_write(byte b){
+  Serial.print("Write ") ;
+  Serial.println(b) ;
   switch (b){
     case 47:
       b = 0 ;
